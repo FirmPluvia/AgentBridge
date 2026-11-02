@@ -1,0 +1,36 @@
+AgentBridge 0.3.7
+Copyright 2026 AgentBridge contributors.
+Project source is distributed under Apache-2.0; see LICENSE.
+No upstream endorsement is implied.
+
+libsu core/service 6.0.0: Apache-2.0
+  https://github.com/topjohnwu/libsu/tree/6.0.0
+  Maintains root authorization and a local RootService Binder executor; bounded binary execution uses managed privileged processes.
+
+Shizuku API/provider 13.1.5: Apache-2.0
+  https://github.com/RikkaApps/Shizuku-API
+Bouncy Castle bcprov-jdk15to18 1.86: Bouncy Castle / MIT-style license
+  https://www.bouncycastle.org/licence.html
+NanoHTTPD / NanoWSD 2.3.1: BSD-3-Clause
+  https://github.com/NanoHttpd/nanohttpd
+OkHttp 4.12.0: Apache-2.0
+  https://github.com/square/okhttp
+AndroidX / Compose: Apache-2.0
+  https://developer.android.com/jetpack/androidx
+Kotlin: Apache-2.0
+  https://github.com/JetBrains/kotlin
+
+Python dependencies have their own licenses in installed package metadata; requirements.lock pins the distribution versions. FastAPI MIT; HTTPX BSD-3-Clause; Uvicorn BSD-3-Clause; MCP Python SDK MIT. Caddy Apache-2.0.
+
+Official interface references consulted during implementation:
+  https://developer.android.com/develop/background-work/services/fgs/service-types#special-use
+  https://github.com/RikkaApps/Shizuku-API#userservice
+  https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
+
+This is not a security-audited product. Device/OEM restrictions and unverified real-device behavior are documented in docs/VALIDATION.md and docs/CAPABILITIES.md.
+
+Launcher artwork: original AI-assisted design, adapted to scalable Android vector resources.
+
+miuix 0.5.2: Apache-2.0
+  https://github.com/compose-miuix-ui/miuix
+  https://repo.maven.apache.org/maven2/top/yukonga/miuix/kmp/miuix-android/0.5.2/

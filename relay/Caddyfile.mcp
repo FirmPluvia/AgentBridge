@@ -1,0 +1,14 @@
+{$RELAY_DOMAIN} {
+    request_body {
+        max_size 64KB
+    }
+    reverse_proxy relay:8080 {
+        header_up X-Forwarded-Proto https
+    }
+}
+{$MCP_DOMAIN} {
+    request_body {
+        max_size 64KB
+    }
+    reverse_proxy mcp:8765
+}

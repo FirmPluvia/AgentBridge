@@ -1,0 +1,8 @@
+<resources>
+ <style name="Theme.AgentBridge.Base" parent="android:style/Theme.Material.Light.NoActionBar">
+  <item name="android:fontFamily">sans</item><item name="android:windowBackground">@color/app_background</item>
+  <item name="android:colorAccent">#3858D9</item><item name="android:windowLightStatusBar">true</item>
+  <item name="android:statusBarColor">@android:color/transparent</item><item name="android:navigationBarColor">@color/app_background</item>
+ </style>
+ <style name="Theme.AgentBridge" parent="Theme.AgentBridge.Base"/>
+</resources>

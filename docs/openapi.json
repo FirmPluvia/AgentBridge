@@ -1,0 +1,1427 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AgentBridge Execution API",
+    "version": "1.0.0",
+    "description": "直连前缀/api/v1；中转使用/devices/{deviceId}/api/v1。所有副作用禁止自动重试，先查询任务。PNG为Base64封装。"
+  },
+  "servers": [
+    {
+      "url": "https://phone.example:8443"
+    }
+  ],
+  "paths": {
+    "/api/v1/status": {
+      "get": {
+        "operationId": "status",
+        "summary": "读取真实设备及后端状态",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "副作用串行占用会话"
+            }
+          },
+          {
+            "name": "deadline",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "description": "Unix毫秒，最多未来120秒"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/capabilities": {
+      "get": {
+        "operationId": "capabilities",
+        "summary": "查询后端可用性和条件能力",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "副作用串行占用会话"
+            }
+          },
+          {
+            "name": "deadline",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "description": "Unix毫秒，最多未来120秒"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/screenshot": {
+      "post": {
+        "operationId": "screenshot",
+        "summary": "获取真实PNG，以Base64无损封装，默认不持久化",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ui-tree": {
+      "post": {
+        "operationId": "ui_tree",
+        "summary": "获取可用UI hierarchy，ROM或权限可能不支持",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/locate": {
+      "post": {
+        "operationId": "locate",
+        "summary": "精确AND匹配UI节点并返回bounds",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "resourceId": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/foreground": {
+      "get": {
+        "operationId": "foreground",
+        "summary": "读取前台应用，权限不足明确失败",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "副作用串行占用会话"
+            }
+          },
+          {
+            "name": "deadline",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "description": "Unix毫秒，最多未来120秒"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/apps": {
+      "get": {
+        "operationId": "apps",
+        "summary": "列出可启动应用",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "副作用串行占用会话"
+            }
+          },
+          {
+            "name": "deadline",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "description": "Unix毫秒，最多未来120秒"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/launch": {
+      "post": {
+        "operationId": "launch",
+        "summary": "启动包名，有副作用",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "packageName": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline",
+                  "packageName",
+                  "sessionId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/key": {
+      "post": {
+        "operationId": "key",
+        "summary": "发送系统按键，有副作用",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "key": {
+                    "type": "string",
+                    "enum": [
+                      "back",
+                      "home",
+                      "recents",
+                      "enter",
+                      "volume-up",
+                      "volume-down"
+                    ]
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline",
+                  "key",
+                  "sessionId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/long-press": {
+      "post": {
+        "operationId": "long_press",
+        "summary": "长按截图实际像素，截图30秒有效，有副作用",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  },
+                  "imageId": {
+                    "type": "string"
+                  },
+                  "durationMs": {
+                    "type": "integer",
+                    "default": 700
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline",
+                  "x",
+                  "y",
+                  "imageId",
+                  "sessionId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/shell": {
+      "post": {
+        "operationId": "shell",
+        "summary": "默认关闭，高级权限跟随当前执行后端，最长30秒，返回异步jobId",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "argv": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "maxItems": 128
+                  },
+                  "outputLimit": {
+                    "type": "integer",
+                    "minimum": 1024,
+                    "maximum": 1048576
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline",
+                  "argv",
+                  "sessionId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{id}": {
+      "get": {
+        "operationId": "jobs_id",
+        "summary": "查询所属控制端任务状态与结果",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "requestId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 128,
+              "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "副作用串行占用会话"
+            }
+          },
+          {
+            "name": "deadline",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "description": "Unix毫秒，最多未来120秒"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/jobs/{id}/cancel": {
+      "post": {
+        "operationId": "jobs_id_cancel",
+        "summary": "取消任务，无法撤销已发生副作用",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/requests/{requestId}": {
+      "get": {
+        "operationId": "requests_requestId",
+        "summary": "查询缓存请求或返回unknown，禁止自动重放",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "副作用串行占用会话"
+            }
+          },
+          {
+            "name": "deadline",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "description": "Unix毫秒，最多未来120秒"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/sessions/{id}/stop": {
+      "post": {
+        "operationId": "sessions_id_stop",
+        "summary": "停止所属会话及排队任务，无法撤销已发生点击",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/tap": {
+      "post": {
+        "operationId": "tap",
+        "summary": "点击最近截图实际像素，截图过期/旋转拒绝；有副作用，未知结果不得重试",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "x": {
+                    "type": "integer"
+                  },
+                  "y": {
+                    "type": "integer"
+                  },
+                  "imageId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline",
+                  "x",
+                  "y",
+                  "imageId",
+                  "sessionId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/swipe": {
+      "post": {
+        "operationId": "swipe",
+        "summary": "滑动最近截图实际像素，有副作用",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "x1": {
+                    "type": "integer"
+                  },
+                  "y1": {
+                    "type": "integer"
+                  },
+                  "x2": {
+                    "type": "integer"
+                  },
+                  "y2": {
+                    "type": "integer"
+                  },
+                  "imageId": {
+                    "type": "string"
+                  },
+                  "durationMs": {
+                    "type": "integer",
+                    "default": 300
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline",
+                  "x1",
+                  "y1",
+                  "x2",
+                  "y2",
+                  "imageId",
+                  "sessionId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/text": {
+      "post": {
+        "operationId": "text",
+        "summary": "通过本地启用辅助输入法提交Unicode文本，有副作用",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "检查success/error/state，HTTP200不表示操作成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Result"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权或撤销"
+          },
+          "413": {
+            "description": "请求超过64KiB"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string",
+                    "maxLength": 128,
+                    "description": "去重ID，UUID；未知结果不得新建ID重试副作用"
+                  },
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "副作用串行占用会话"
+                  },
+                  "deadline": {
+                    "type": "integer",
+                    "format": "int64",
+                    "description": "Unix毫秒，最多未来120秒"
+                  },
+                  "async": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 16000
+                  }
+                },
+                "required": [
+                  "requestId",
+                  "deviceId",
+                  "deadline",
+                  "text",
+                  "sessionId"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Result": {
+        "type": "object",
+        "required": [
+          "requestId",
+          "deviceId",
+          "backend",
+          "success",
+          "durationMs",
+          "state",
+          "data",
+          "error"
+        ],
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "deviceId": {
+            "type": "string"
+          },
+          "backend": {
+            "type": "string",
+            "nullable": true
+          },
+          "success": {
+            "type": "boolean"
+          },
+          "durationMs": {
+            "type": "integer"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "completed",
+              "failed",
+              "cancelled",
+              "unknown"
+            ]
+          },
+          "data": {
+            "nullable": true,
+            "description": "操作特定对象或数组；截图含PNG的imageBase64无损封装"
+          },
+          "error": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

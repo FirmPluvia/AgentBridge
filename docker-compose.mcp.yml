@@ -1,0 +1,22 @@
+services:
+  mcp:
+    build:
+      context: .
+      dockerfile: relay/Dockerfile
+    command: [agentbridge-mcp, --http, --host, 0.0.0.0, --port, '8765']
+    restart: unless-stopped
+    environment:
+      AB_URL: ${AB_URL:?Set AB_URL}
+      AB_DEVICE: ${AB_DEVICE:?Set AB_DEVICE}
+      AB_TOKEN: ${AB_TOKEN:?Set AB_TOKEN}
+      AB_RELAY: '1'
+      AB_MCP_TOKEN: ${AB_MCP_TOKEN:?Set independent AB_MCP_TOKEN}
+      AB_MCP_HOSTS: ${AB_MCP_HOSTS:?Set MCP hostname}
+      AB_MCP_ORIGINS: ${AB_MCP_ORIGINS:?Set MCP origin}
+    networks: [internal]
+    security_opt: [no-new-privileges:true]
+  caddy:
+    environment:
+      MCP_DOMAIN: ${MCP_DOMAIN:?Set MCP_DOMAIN}
+    volumes:
+      - ./relay/Caddyfile.mcp:/etc/caddy/Caddyfile:ro

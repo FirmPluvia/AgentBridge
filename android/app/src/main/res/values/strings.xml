@@ -1,0 +1,5 @@
+<resources>
+ <string name="app_name">AgentBridge</string>
+ <string name="ime_name">AgentBridge 安全输入</string>
+ <string name="ime_subtype_name">远程输入 / 英文键盘</string>
+</resources>

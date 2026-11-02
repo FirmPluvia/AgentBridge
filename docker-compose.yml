@@ -1,0 +1,26 @@
+services:
+  relay:
+    build:
+      context: .
+      dockerfile: relay/Dockerfile
+    restart: unless-stopped
+    volumes: [relay-data:/data]
+    networks: [internal]
+    security_opt: [no-new-privileges:true]
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    ports: ["443:443", "80:80"]
+    environment:
+      RELAY_DOMAIN: ${RELAY_DOMAIN:?Set RELAY_DOMAIN in .env}
+    volumes:
+      - ./relay/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [internal]
+volumes:
+  relay-data:
+  caddy-data:
+  caddy-config:
+networks:
+  internal:

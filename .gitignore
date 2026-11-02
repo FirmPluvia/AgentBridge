@@ -1,0 +1,11 @@
+.gradle/
+**/build/
+local.properties
+*.jks
+*.keystore
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+relay-data/
