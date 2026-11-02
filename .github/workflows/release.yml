@@ -19,6 +19,10 @@ jobs:
         with: {packages: 'platform-tools'}
       - uses: gradle/actions/setup-gradle@v4
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      # The checkout/upload path does not preserve the gradlew executable bit,
+      # so CI would fail with 'Permission denied' without this step.
+      - run: chmod +x gradlew
+        working-directory: android
       - name: Prepare optional release signing
         id: signing
         shell: bash
