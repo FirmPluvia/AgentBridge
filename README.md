@@ -140,6 +140,7 @@ export JAVA_HOME=/path/to/jdk17
 export ANDROID_HOME=/path/to/android-sdk
 sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
 
+chmod +x android/gradlew scripts/build.sh  # 从 GitHub 克隆后若执行权限丢失，先补这一句
 ./scripts/build.sh        # 生成调试签名 APK 到 artifacts/
 pip install -c requirements.lock '.[test]'
 pytest -q
