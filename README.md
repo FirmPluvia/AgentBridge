@@ -124,7 +124,7 @@ MCP：在已接入该 tailnet 的电脑上跑 `agentbridge-mcp`（stdio），
 包名与安装注意：本仓库源码的包名已改为 `starx.dev.agentbridge`
 （`android/app/build.gradle.kts` 里的 namespace 与 applicationId，
 versionCode 10、versionName 0.3.7，minSdk 26 / Android 8.0；
-Java / Kotlin 源码的包声明与签名配置未动）。
+Java / Kotlin / AIDL 源码的包声明也已全部改为新包名，签名配置未动）。
 因此它**不是**旧包名 `dev.agentbridge` 的覆盖升级，
 会作为一个新应用安装：需要重新授权 Root / Shizuku、重新保存连接设置、
 重新导出证书与令牌；旧应用确认迁移完成后再卸载，
