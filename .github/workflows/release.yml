@@ -12,7 +12,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
+      # setup-android@v3 defaults packages to 'tools platform-tools', but Google
+      # removed the legacy 'tools' package, so sdkmanager exits 1. Only ask for
+      # platform-tools; the next step installs the platform and build-tools.
       - uses: android-actions/setup-android@v3
+        with: {packages: 'platform-tools'}
       - uses: gradle/actions/setup-gradle@v4
       - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
       - name: Prepare optional release signing
