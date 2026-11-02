@@ -5,4 +5,6 @@ AgentBridge 0.3.7 · miuix提示与执行后端状态
 - 当前选择后端有有效IPC连接及UID时显示当前执行后端；否则显示Root未授权或Shizuku未授权，并保留进度/错误详情。
 - 切换后端不引用另一后端缓存，连接失效不展示旧就绪详情。
 
-同调试签名可覆盖升级。编译、lint、46项JVM及11项Python检查通过；miuix弹窗及真机权限交互仍需实机验证。见VALIDATION.md。
+包名：starx.dev.agentbridge（源码的 namespace 与 applicationId 已改，Java/Kotlin 包声明未动）。此包不是旧 dev.agentbridge 的覆盖升级，会作为新应用安装，需重新授权 Root/Shizuku 并重新保存连接设置与证书令牌。
+
+编译、lint、46项JVM及11项Python检查通过；miuix弹窗及真机权限交互仍需实机验证。见VALIDATION.md。
