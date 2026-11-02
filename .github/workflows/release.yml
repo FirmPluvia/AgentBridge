@@ -1,0 +1,76 @@
+name: Tagged release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Prepare optional release signing
+        id: signing
+        shell: bash
+        env:
+          KEYSTORE: ${{ secrets.AB_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.AB_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.AB_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.AB_KEY_PASSWORD }}
+        run: |
+          if [[ -n "$KEYSTORE" && -n "$STORE_PASSWORD" && -n "$KEY_ALIAS" && -n "$KEY_PASSWORD" ]]; then
+            printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
+            chmod 600 "$RUNNER_TEMP/release.jks"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo 'Signing secrets incomplete: producing explicitly UNSIGNED release APK.'
+          fi
+      - name: Build release
+        shell: bash
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+          AB_STORE_PASSWORD: ${{ secrets.AB_STORE_PASSWORD }}
+          AB_KEY_ALIAS: ${{ secrets.AB_KEY_ALIAS }}
+          AB_KEY_PASSWORD: ${{ secrets.AB_KEY_PASSWORD }}
+        working-directory: android
+        run: |
+          if [[ "$SIGNED" == true ]]; then
+            export AB_SIGNING_FILE="$RUNNER_TEMP/release.jks"
+          fi
+          ./gradlew :app:assembleRelease :app:lintRelease
+      - name: Prepare labeled artifact
+        shell: bash
+        env:
+          SIGNED: ${{ steps.signing.outputs.signed }}
+        run: |
+          mkdir -p release-artifacts
+          if [[ "$SIGNED" == true ]]; then
+            cp android/app/build/outputs/apk/release/app-release.apk release-artifacts/AgentBridge-release-signed.apk
+          else
+            cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-artifacts/AgentBridge-release-UNSIGNED.apk
+          fi
+          cd release-artifacts
+          sha256sum *.apk > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with: {name: AgentBridge-release, path: release-artifacts/}
+      - name: Publish tag artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release-artifacts/* --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release-artifacts/* --verify-tag --title "AgentBridge $GITHUB_REF_NAME" --notes-file docs/RELEASE.md
+          fi
+      - name: Remove temporary key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.jks"
