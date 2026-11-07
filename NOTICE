@@ -1,4 +1,4 @@
-AgentBridge 0.3.7
+AgentBridge 0.5
 Copyright 2026 AgentBridge contributors.
 Project source is distributed under Apache-2.0; see LICENSE.
 No upstream endorsement is implied.
@@ -34,3 +34,6 @@ Launcher artwork: original AI-assisted design, adapted to scalable Android vecto
 miuix 0.5.2: Apache-2.0
   https://github.com/compose-miuix-ui/miuix
   https://repo.maven.apache.org/maven2/top/yukonga/miuix/kmp/miuix-android/0.5.2/
+
+ZXing core 3.5.4: Apache-2.0, https://github.com/zxing/zxing
+org.json 20250517: JSON license; JVM tests only, not bundled as an Android runtime dependency.

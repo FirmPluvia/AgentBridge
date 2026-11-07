@@ -1,24 +1,31 @@
 # 构建和发布
 
-工具链固定：JDK17 / Gradle8.13 / AGP8.13.2 / Kotlin2.2.21 / SDK36 / Build Tools36.0.0。Android最低26。Python最低3.11，CI3.12。依赖版本见源码；Gradle Wrapper SHA256防止错误分发包。
+工具链固定：JDK17 / Gradle8.13 / AGP8.13.2 / Kotlin2.2.21 / SDK36 / Build Tools36.0.0。Android最低26。Python最低3.11，CI3.12。依赖版本见源码；Gradle Wrapper SHA256固定。
 
-本地 `./scripts/build.sh` 生成可安装调试签名 APK，不需要发布密钥。也可用 Android Studio 打开 android 目录，选择 JDK17，同意SDK许可证后构建。不能使用只有JRE没有javac的安装。
+本地 `./scripts/build.sh` 生成默认调试签名的可安装APK，不需要发布密钥。也可用Android Studio打开android目录，选择JDK17，同意SDK许可证后构建。不能只安装没有javac的JRE。
 
-GitHub仓库根目录包含 `.github/workflows/build.yml` 和 `release.yml`。上传全部源码、Wrapper JAR及脚本（可执行位）；不要上传 `local.properties`、`.env`、构建缓存及签名文件。push、pull_request、workflow_dispatch 运行Python测试、Android单元测试、lint、debug APK构建，Artifacts中下载APK、SHA256SUMS和报告。
+```bash
+export JAVA_HOME=/path/to/jdk17
+export ANDROID_HOME=/path/to/android-sdk
+sdkmanager 'platforms;android-36' 'build-tools;36.0.0' 'platform-tools'
+./scripts/build.sh
+pip install -c requirements.lock '.[test]'
+pytest -q
+```
 
-推送 `v*` tag 触发 Release。正式签名先在可信本地生成私有 keystore，例如 Android Studio Generate Signed Bundle / APK，保管恢复副本，然后在 GitHub Repository → Settings → Secrets and variables → Actions 设置：
+上传完整源码、Gradle Wrapper JAR及脚本到GitHub仓库；保留gradlew与脚本可执行位。不要上传local.properties、.env、构建缓存及签名材料。`.github/workflows/build.yml`在push、PR及手动触发时运行Python测试、Android单元测试、lint、debug APK构建与签名身份校验，Artifacts中下载APK、SHA256SUMS及报告。
 
-| Secret | 值 |
-|---|---|
-| AB_KEYSTORE_BASE64 | keystore文件完整Base64（Linux `base64 -w0 release.jks`，不要提交输出） |
-| AB_STORE_PASSWORD | keystore密码 |
-| AB_KEY_ALIAS | 签名alias |
-| AB_KEY_PASSWORD | 私钥密码 |
+`.github/workflows/release.yml` **只在手动或tag触发**，不在普通push或PR执行。先构建unsigned release，再由独立apksigner步骤使用starx签名并核验固定SHA-256。包名为starx.dev.agentbridge；debug仍为dev.agentbridge，且不配置任何signingConfig、不读取签名Secrets。
 
-Workflow仅在四项齐全时把key写入受限临时文件，构建后始终删除。Gradle从环境读取秘密，不打印其值。缺少任一项生成明确命名的 `AgentBridge-release-UNSIGNED.apk`，未签名产物不能直接安装。debug产物始终明确标识debug。不要用调试签名伪装正式发布；正式签名与debug不同，覆盖安装可能需要先卸载（卸载会丢失设备身份及授权）。
+需要的Secrets仅为 **KEYSTORE_BASE64、KEYSTORE_PASSWORD、KEY_ALIAS、KEY_PASSWORD**。KEY_ALIAS必须为starx。配置、证书指纹、输出、临时密钥清理和安装迁移见[签名约定](SIGNING.md)。缺少材料或指纹不符时任务失败，没有debug签名或unsigned正式产物回退。
 
-本地发布可在安全环境设置 `AB_SIGNING_FILE`（绝对路径）、`AB_STORE_PASSWORD`、`AB_KEY_ALIAS`、`AB_KEY_PASSWORD`，运行 `./gradlew :app:assembleRelease :app:lintRelease`。不要在shell历史放明文密码。
+可独立检查unsigned构建（不是可安装正式包）：
 
-云环境的HTTP代理需要Java单独配置代理与受信CA。应把环境提供的CA加入JDK truststore；不要使用TrustAll。交付源码不硬编码本次环境代理、SDK或JDK的私有路径。
+```bash
+cd android
+./gradlew :app:assembleRelease :app:testReleaseUnitTest :app:lintRelease
+cd ..
+python scripts/verify_android_artifact.py --kind unsigned-release --apk android/app/build/outputs/apk/release/app-release-unsigned.apk
+```
 
-本次没有GitHub写入凭证和目标仓库，没有执行推送/远程Actions。交付zip可以解压后上传到自己的仓库。
+云环境代理需Java代理配置及受信CA，不使用TrustAll；源码不硬编码本次环境的SDK/JDK私有路径。当前没有用户目标GitHub仓库及写权限，没有推送或远程Actions执行记录。交付zip可上传到自己的仓库。

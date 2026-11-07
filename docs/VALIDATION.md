@@ -1,18 +1,50 @@
-# AgentBridge 0.3.7 验证记录
+# AgentBridge 0.5 验证记录
 
-日期：2026-11-02。当前版本只面向 **Tailscale/局域网直连 + Root/Shizuku**。ADB模块已删除，APK中没有公网中转客户端。
+日期：2026-11-07。当前版本只面向 **Tailscale/局域网直连 + Root/Shizuku**。ADB模块已删除，APK中没有公网中转客户端。
 
 ## 已验证
 
 - Android debug和unsigned release构建；JDK17 / Gradle8.13 / AGP8.13.2 / Kotlin2.2.21 / SDK36 / Build Tools36.0.0。
 - Debug APK签名、包名、版本号和min/target SDK静态检查；与0.1.0调试签名一致，可作为同包名升级。
 - Android lint无错误（警告保留在报告中）。
-- JVM单元测试46项：shell参数特殊字符、超时、输出上限、取消；并发去重和崩溃后不重放；X509 SAN/签名及真实JVM TLS主机名握手；Tailscale地址与通配监听配置；并发证书身份只创建一次；特权IPC二进制帧、错误帧、合计输出上限、负长度拒绝。
-- Python独立环境11项测试。包含保留的旧独立relay协议测试，它们不代表0.2.0 APK启用了公网中转。
+- JVM单元测试53项：shell参数特殊字符、超时、输出上限、取消；并发去重和崩溃后不重放；X509 SAN/签名及真实JVM TLS主机名握手；Tailscale地址与通配监听配置；并发证书身份只创建一次；特权IPC二进制帧、错误帧、合计输出上限、负长度拒绝。
+- Python独立环境测试（本次计数见下文）。包含保留的旧独立relay协议测试，它们不代表0.2.0 APK启用了公网中转。
 - APK名称/图标资源及输入法元数据会执行静态检查；桌面启动器自行隐藏标签的设置无法由App强制覆盖。
 - UI源码检查：移除750ms整页刷新；Compose渲染路径不调用Vault/Keystore/PKCS12；证书准备与保存、网络自检在Dispatchers.IO，输入框只更新内存草稿，保存时落配置；增加可并发复用的证书缓存。
 
 最终结果及校验和以交付的 `AgentBridge-verification.zip`、`SHA256SUMS` 为准。
+
+## 0.5 文案与签名策略补丁（版本码14）
+
+- debug实际包名dev.agentbridge、默认Android Debug证书；release实际包名starx.dev.agentbridge且未签名，两个变体均编译、53项JVM单元测试及lint通过。
+- 合并后的release Manifest中输入法类仍为dev.agentbridge.BridgeIme，provider authority跟随starx包名；Engine使用实际ComponentName。没有真机输入法切换验收。
+- 签名策略测试覆盖缺失Secrets、错误别名、无效Base64、单签名者要求、真实APK包名隔离；使用一次性测试密钥实际签名，确认非指定证书被拒绝、APK不发布、临时密钥清理且原unsigned包未改变。生产starx密钥未在当前环境提供，成功签名路径需GitHub Actions验收。
+- Python共36项通过，其中10项签名策略/实际工具检查，既有SDK/协议26项保留。未装Android SDK或未本地构建两种APK时，4项实际工具检查会skip，不能当作已通过。
+- 工作流源码检查：debug无signing Secrets，release仅手动/tag，只有签名步骤注入四项指定Secrets，核验后上传；未声称已在用户GitHub运行。
+- 界面文案通过源码核对；没有真机/模拟器，未声称视觉或设备操作已通过。
+
+## 0.5 双主题UI与提示词
+
+- Miuix使用固定版本库的实际字体角色、G2卡片/按钮、输入、开关、导航和SuperDialog；删除ClassicMaterialHome及其模式标记。
+- Material 3使用Typography层级、surfaceContainer、原生卡片/胶囊按钮/描边输入/勾选分段选择/导航指示器；两套主题均完成编译和lint。
+- 源码检查对齐、字体缩放、13sp长连接按钮适配、根层弹窗宿主及二维码截屏允许策略保留；提示词缩短，增加包内设计和初始化说明。
+- 构建、lint、既有53项JVM及26项Python协议检查通过。未新增仅复刻样式实现的单元测试，也未把协议测试视为视觉验收。
+- adb devices为空，SDK未装模拟器且/dev/kvm不存在。无法进行Android运行时截图；需真机检查两主题的深浅色、大字体、横竖屏、键盘、弹窗和二维码排版。
+
+## 0.4 精简二维码、提示词和帮助
+
+- 原QR编解码测试更新为精简格式2，真实RSA证书编码解码后断言恰好version/deviceId/urls/token/certificatePem五项，无元数据冗余，完整证书/令牌保留。
+- 新增7项Python检查（含参数化）：两代导入均保持TLS验证、精简格式缺证书/无效URL/令牌/布尔版本/回环地址拒绝、HTTP须控制端显式允许。
+- 源码检查：二维码窗口为SecureOff，无SecureOn；提示词在二维码页展示并可复制；帮助覆盖同Wi-Fi、两类热点、Tailscale；主题标签为Miuix，旧偏好值不变。
+- 编译、lint、53项JVM及26项Python检查通过。没有真机，未将截图允许策略、相机扫码、提示词复制、帮助排版或热点互通视为实机已通过。
+
+## 0.3.8 一键自检与完整连接二维码
+
+- 增加7项JVM测试：使用真实RSA证书的QR编码/ZXing解码逐字段比较；缺证书/无效地址拒绝；HTTP导出标志；容量失败；真实有效PNG头尺寸与CRC；截断/错误截图拒绝；UID与后端匹配且命令成功才通过。
+- 增加8项Python测试（含参数化）：配置导入后凭证与协议一致、TLS验证及check_hostname保持启用、证书指纹/版本/URL/令牌无效拒绝、HTTP必须显式选择、文件大小限制及环境变量导入。
+- UI源码检查：生成仅经风险确认调用，默认QR状态空；只在内存生成，安全Dialog窗口、后台/离页/撤销时清理；自检不修改Engine最近截图引用，不发送点击或文本，不自动授权或开启监听。
+- 编译、lint、53项JVM及19项Python检查通过。不把协议/图像编解码测试等同真机相机扫码、触控或Android权限通过。
+- 需真机验收：两主题自检过程及取消、QR风险确认、相机扫码后导入、黑白二维码清晰度、旋转和后台隐藏、FLAG_SECURE效果、撤销后旧二维码不可用、真实Root/Shizuku截图与网络检查。
 
 ## 0.3.7 miuix弹窗显示层与后端状态
 

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import xml.etree.ElementTree as ET
 import zipfile
+from verify_android_artifact import verify
 
 root = Path(__file__).resolve().parents[1]
 out = root / "artifacts"
@@ -22,6 +23,7 @@ apk = root / "android/app/build/outputs/apk/debug/app-debug.apk"
 def run(*args):
     return subprocess.run([str(x) for x in args], capture_output=True, text=True, check=True).stdout
 
+debug_identity = verify(apk, "debug", sdk)
 signed = run(sdk / "apksigner", "verify", "--verbose", "--print-certs", apk)
 badging = run(sdk / "aapt", "dump", "badging", apk)
 assert f"versionName='{version}'" in badging and f"versionCode='{version_code}'" in badging
@@ -39,13 +41,17 @@ shutil.copyfile(apk, out / f"{prefix}-debug.apk")
 shutil.copyfile(apk, out / "AgentBridge-debug.apk")
 release = root / "android/app/build/outputs/apk/release/app-release-unsigned.apk"
 if release.exists():
-    check = subprocess.run([str(sdk / "apksigner"), "verify", str(release)], capture_output=True)
-    assert check.returncode != 0
-    shutil.copyfile(release, out / f"{prefix}-release-UNSIGNED.apk")
+    release_identity = verify(release, "unsigned-release", sdk)
+    shutil.copyfile(release, out / f"{prefix}-starx-release-UNSIGNED.apk")
+    old_unsigned = out / f"{prefix}-release-UNSIGNED.apk"
+    old_unsigned.unlink(missing_ok=True)
 report = out / f"apk-verification-v{version.replace('.', '')}.txt"
 report.write_text(signed + badging + "\nAdaptive icon tree:\n" + monochrome)
 reports = out / "reports"
 reports.mkdir(exist_ok=True)
+(reports / "DEBUG-VERIFICATION.json").write_text(json.dumps(debug_identity, indent=2) + "\n")
+if release.exists():
+    (reports / "UNSIGNED-RELEASE-VERIFICATION.json").write_text(json.dumps(release_identity, indent=2) + "\n")
 for old in reports.glob("TEST-*.xml"):
     old.unlink()
 records = []

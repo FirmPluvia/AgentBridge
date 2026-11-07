@@ -1,4 +1,4 @@
-# Tailscale 直连操作指南（AgentBridge 0.3.7）
+# Tailscale 直连操作指南（AgentBridge 0.5）
 
 适用：被控手机有可用 Root 或 Shizuku，Agent 在另一台电脑或手机上运行。无需公网服务器、端口映射或 `tailscale serve`。
 
@@ -133,3 +133,7 @@ Tailscale候选范围为100.64.0.0/10及fd7a:115c:a1e0::/48；必须首先来自
 权限页两个后端的操作按钮分别为“申请/重试 Root 连接”和“申请/重试 Shizuku 连接”。连接页两项IP选择操作使用相同字号；大字体或窄窗口下可上下排列以完整显示文字。
 
 miuix模式下，保存连接后应出现操作结果弹窗，关闭后可再次保存；关于、失败信息及监听所有接口确认也通过同一显示层呈现。权限配置中的当前执行后端只在本地IPC连接和UID有效时显示；未授权时显示当前所选Root或Shizuku名称。
+
+新版本可先在首页一键自检，再到连接页确认风险后展示完整连接二维码。控制端扫描得到JSON后可通过`--connection-config connection.json`导入，无需另传令牌和PEM；详细安全与使用步骤见CONNECTION_QR.md。
+
+0.4在设置页新增连接帮助，并精简二维码为五项字段；展示页允许截屏，可复制agent连接提示词。建议控制端升级到0.4 SDK/CLI/MCP，新客户端兼容旧二维码。详见HELP.md和CONNECTION_QR.md。

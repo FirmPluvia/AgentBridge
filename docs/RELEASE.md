@@ -1,10 +1,11 @@
-AgentBridge 0.3.7 · miuix提示与执行后端状态
+AgentBridge 0.5 · 连接文案与starx发布约定
 
-- 显式挂载miuix根层弹窗宿主，修复Material Scaffold下保存结果等提示不显示。
-- 对话框文字随当前深浅色主题显示，操作结果不自动消失。
-- 当前选择后端有有效IPC连接及UID时显示当前执行后端；否则显示Root未授权或Shizuku未授权，并保留进度/错误详情。
-- 切换后端不引用另一后端缓存，连接失效不展示旧就绪详情。
+- 设置页第二个按钮简化为“连接帮助”，首页连接类型改为“局域网·Tailscale”。
+- 版本名保持0.5；版本码14。保留Miuix/Material 3双主题、精简二维码和Agent提示词。
+- debug：dev.agentbridge，Android默认调试签名，无自定义signingConfig、不读取签名Secrets。
+- release：starx.dev.agentbridge，Gradle先构建unsigned，再由apksigner使用starx别名签名，并核验指定SHA-256。仅手动/tag触发，缺少密钥或证书不符即失败，不混用debug签名。
+- 辅助输入法组件名适配正式包的新applicationId。两种包独立安装，授权和连接资料需分别配置。
 
-包名：starx.dev.agentbridge（源码的 namespace、applicationId 与 Java/Kotlin/AIDL 包声明已全部改为 starx.dev.agentbridge）。此包不是旧 dev.agentbridge 的覆盖升级，会作为新应用安装，需重新授权 Root/Shizuku 并重新保存连接设置与证书令牌。
+详见SIGNING.md。生产密钥仅在GitHub Secrets中配置；仓库、源码包和日志不包含密钥或口令。GitHub Release附件须经过固定指纹核验；本地交付下载页仅提供可安装debug包，不宣称已经生成starx正式包。
 
-编译、lint、46项JVM及11项Python检查通过；miuix弹窗及真机权限交互仍需实机验证。见VALIDATION.md。
+本地Android构建、两种变体单元测试和lint通过；没有Android真机或模拟器，仍需实际验证Root/Shizuku、输入法及网络连接。签名拒绝路径采用临时测试证书验证，不能当作生产starx密钥验证通过。

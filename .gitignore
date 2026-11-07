@@ -9,3 +9,15 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 relay-data/
+
+/connection.json
+/connection-*.json
+*.agentbridge-connection.json
+
+*.p12
+*.pfx
+*.b64
+*.base64
+keystore.properties
+signing.properties
+release-artifacts/

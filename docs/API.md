@@ -65,3 +65,5 @@ curl --cacert "$AB_CA" --get "$AB_URL/api/v1/status" \
 ```
 
 中转 URL 把 `/api/v1` 替换为 `/devices/$AB_DEVICE/api/v1`，可信公网证书无需 `--cacert`。不要把请求头、Tailscale IP 或100.x网段作为身份凭证。
+
+连接二维码是本地用户确认后的配置导出，不增加远程读取令牌的HTTP端点。SDK导入格式与说明见[CONNECTION_QR.md](CONNECTION_QR.md)。

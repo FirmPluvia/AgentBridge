@@ -21,7 +21,7 @@ class AgentBridge:
     Coordinates use the actual pixels of a screenshot less than 30 seconds old.
     """
     def __init__(self, url: str, token: str, device_id: str, *, relay=False,
-                 ca: str | None = None, allow_http=False, session_id: str | None = None,
+                 ca: str | None = None, ca_pem: str | None = None, allow_http=False, session_id: str | None = None,
                  http_client: httpx.AsyncClient | None = None):
         if not url.startswith("https://") and not (allow_http and not relay and url.startswith("http://")):
             raise ValueError("HTTPS required; direct trusted HTTP needs explicit allow_http=True")
@@ -29,12 +29,27 @@ class AgentBridge:
         self.relay = relay
         self.session_id = session_id or str(uuid.uuid4())
         self.last_image: dict | None = None
-        context = ssl.create_default_context(cafile=ca) if ca else ssl.create_default_context()
+        if ca and ca_pem:
+            raise ValueError("Choose a CA file or inline certificate, not both")
+        context = ssl.create_default_context(cadata=ca_pem) if ca_pem else ssl.create_default_context(cafile=ca) if ca else ssl.create_default_context()
         self._owns_client = http_client is None
         self.http = http_client or httpx.AsyncClient(verify=context, follow_redirects=False)
 
     @classmethod
+    def from_connection_config(cls, config: dict, *, url=None, allow_http=False, session_id=None, http_client=None):
+        from .connection import connection_options
+        options = connection_options(config, url=url, allow_http=allow_http)
+        return cls(**options, session_id=session_id, http_client=http_client)
+
+    @classmethod
     def from_env(cls):
+        if os.getenv("AB_CONNECTION_CONFIG"):
+            from .connection import read_connection
+            if os.getenv("AB_RELAY") == "1":
+                raise ValueError("Connection QR supports direct mode only")
+            return cls.from_connection_config(read_connection(os.environ["AB_CONNECTION_CONFIG"]),
+                       url=os.getenv("AB_URL"), allow_http=os.getenv("AB_ALLOW_HTTP") == "1",
+                       session_id=os.getenv("AB_SESSION"))
         return cls(os.environ["AB_URL"], os.environ["AB_TOKEN"], os.environ["AB_DEVICE"],
                    relay=os.getenv("AB_RELAY") == "1", ca=os.getenv("AB_CA"),
                    allow_http=os.getenv("AB_ALLOW_HTTP") == "1", session_id=os.getenv("AB_SESSION"))

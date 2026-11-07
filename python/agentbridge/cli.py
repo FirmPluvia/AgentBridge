@@ -20,7 +20,15 @@ async def run(args):
                 if value["approved"] is not None:
                     print(json.dumps(value,ensure_ascii=False));return
             raise TimeoutError("Pairing expired")
-    async with AgentBridge(args.url,args.token,args.device,relay=args.relay,ca=args.ca,allow_http=args.allow_http,session_id=args.session) as bridge:
+    if args.connection_config:
+        from .connection import read_connection
+        if args.relay:
+            raise ValueError("Connection QR supports direct mode only")
+        bridge = AgentBridge.from_connection_config(read_connection(args.connection_config), url=args.url,
+                    allow_http=args.allow_http, session_id=args.session)
+    else:
+        bridge = AgentBridge(args.url,args.token,args.device,relay=args.relay,ca=args.ca,allow_http=args.allow_http,session_id=args.session)
+    async with bridge:
         cmd=args.command
         if cmd=="status": value=await bridge.status()
         elif cmd=="devices": value=await bridge.devices()
@@ -35,6 +43,7 @@ async def run(args):
 def main():
     p=argparse.ArgumentParser(description="AgentBridge：坐标为最近截图实际像素；副作用不会自动重试")
     p.add_argument("--url",default=os.getenv("AB_URL"));p.add_argument("--token",default=os.getenv("AB_TOKEN"));p.add_argument("--device",default=os.getenv("AB_DEVICE"));p.add_argument("--relay",action="store_true",default=os.getenv("AB_RELAY")=="1");p.add_argument("--ca",default=os.getenv("AB_CA"));p.add_argument("--allow-http",action="store_true",default=os.getenv("AB_ALLOW_HTTP")=="1");p.add_argument("--session",default=os.getenv("AB_SESSION"))
+    p.add_argument("--connection-config",default=os.getenv("AB_CONNECTION_CONFIG"),help="扫码得到的敏感JSON配置文件；不打印或自动保存凭证")
     subs=p.add_subparsers(dest="command",required=True)
     for c in ("status","devices","capabilities","stop"):subs.add_parser(c)
     s=subs.add_parser("screenshot");s.add_argument("--output",default="screen.png")
@@ -43,5 +52,7 @@ def main():
     s=subs.add_parser("shell");s.add_argument("argv",nargs=argparse.REMAINDER)
     s=subs.add_parser("pair");s.add_argument("--name",default="Agent controller")
     args=p.parse_args()
-    if not args.url or not args.device or (args.command!="pair" and not args.token):p.error("需要 --url、--device 和 --token（配对不需要 token）")
+    if not args.connection_config and (not args.url or not args.device or (args.command!="pair" and not args.token)):p.error("需要 --url、--device 和 --token（配对不需要 token）")
+    if args.command == "pair" and args.connection_config:
+        p.error("连接二维码已包含凭证，不使用旧relay配对")
     asyncio.run(run(args))
