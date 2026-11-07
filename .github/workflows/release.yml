@@ -1,17 +1,20 @@
-name: Tagged release
+name: Starx release
 on:
   push:
-    tags: ['v*']
+    tags: ['**']
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
   release:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '17'}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
       # setup-android@v3 defaults packages to 'tools platform-tools', but Google
       # removed the legacy 'tools' package, so sdkmanager exits 1. Only ask for
       # platform-tools; the next step installs the platform and build-tools.
@@ -23,52 +26,24 @@ jobs:
       # so CI would fail with 'Permission denied' without this step.
       - run: chmod +x gradlew
         working-directory: android
-      - name: Prepare optional release signing
-        id: signing
-        shell: bash
-        env:
-          KEYSTORE: ${{ secrets.AB_KEYSTORE_BASE64 }}
-          STORE_PASSWORD: ${{ secrets.AB_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.AB_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.AB_KEY_PASSWORD }}
-        run: |
-          if [[ -n "$KEYSTORE" && -n "$STORE_PASSWORD" && -n "$KEY_ALIAS" && -n "$KEY_PASSWORD" ]]; then
-            printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/release.jks"
-            chmod 600 "$RUNNER_TEMP/release.jks"
-            echo "signed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "signed=false" >> "$GITHUB_OUTPUT"
-            echo 'Signing secrets incomplete: producing explicitly UNSIGNED release APK.'
-          fi
-      - name: Build release
-        shell: bash
-        env:
-          SIGNED: ${{ steps.signing.outputs.signed }}
-          AB_STORE_PASSWORD: ${{ secrets.AB_STORE_PASSWORD }}
-          AB_KEY_ALIAS: ${{ secrets.AB_KEY_ALIAS }}
-          AB_KEY_PASSWORD: ${{ secrets.AB_KEY_PASSWORD }}
+      - name: Build unsigned release without signing secrets
+        run: ./gradlew :app:assembleRelease :app:testReleaseUnitTest :app:lintRelease
         working-directory: android
-        run: |
-          if [[ "$SIGNED" == true ]]; then
-            export AB_SIGNING_FILE="$RUNNER_TEMP/release.jks"
-          fi
-          ./gradlew :app:assembleRelease :app:lintRelease
-      - name: Prepare labeled artifact
-        shell: bash
+      - name: Verify unsigned release identity
+        run: python scripts/verify_android_artifact.py --kind unsigned-release --apk android/app/build/outputs/apk/release/app-release-unsigned.apk
+      - name: Sign with starx and verify pinned certificate
         env:
-          SIGNED: ${{ steps.signing.outputs.signed }}
-        run: |
-          mkdir -p release-artifacts
-          if [[ "$SIGNED" == true ]]; then
-            cp android/app/build/outputs/apk/release/app-release.apk release-artifacts/AgentBridge-release-signed.apk
-          else
-            cp android/app/build/outputs/apk/release/app-release-unsigned.apk release-artifacts/AgentBridge-release-UNSIGNED.apk
-          fi
-          cd release-artifacts
-          sha256sum *.apk > SHA256SUMS
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: python scripts/sign_release.py
       - uses: actions/upload-artifact@v4
-        with: {name: AgentBridge-release, path: release-artifacts/}
-      - name: Publish tag artifacts
+        with:
+          name: AgentBridge-starx-release
+          path: release-artifacts/
+          if-no-files-found: error
+      - name: Publish verified tag artifacts
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
@@ -77,8 +52,13 @@ jobs:
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" release-artifacts/* --clobber
           else
-            gh release create "$GITHUB_REF_NAME" release-artifacts/* --verify-tag --title "AgentBridge $GITHUB_REF_NAME" --notes-file docs/RELEASE.md
+            gh release create "$GITHUB_REF_NAME" release-artifacts/* --verify-tag --title "AgentBridge $GITHUB_REF_NAME · starx" --notes-file docs/RELEASE.md
           fi
-      - name: Remove temporary key
+      - name: Always remove temporary signing material
         if: always()
-        run: rm -f "$RUNNER_TEMP/release.jks"
+        shell: python
+        run: |
+          import os, pathlib, shutil
+          for path in pathlib.Path(os.environ['RUNNER_TEMP']).glob('agentbridge-starx-*'):
+              if path.is_dir() and not path.is_symlink():
+                  shutil.rmtree(path)
