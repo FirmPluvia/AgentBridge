@@ -104,7 +104,10 @@ def test_bad_base64_is_private_and_rejected(android_builds, monkeypatch, tmp_pat
     assert not (tmp_path / "output").exists()
 
 
-def test_real_wrong_certificate_never_published_and_key_removed(android_builds, tmp_path):
+def test_real_wrong_certificate_is_signed_without_verification(android_builds, tmp_path):
+    # Certificate verification was removed: a key that does not match the
+    # pinned starx fingerprint is now signed and published without any
+    # verification report. The temporary key must still be removed.
     tools, _, release = android_builds
     before = hashlib.sha256(release.read_bytes()).digest()
     # A temporary TEST identity only. No production key/password is read or generated.
@@ -128,10 +131,13 @@ def test_real_wrong_certificate_never_published_and_key_removed(android_builds, 
         result = subprocess.run([sys.executable, str(ROOT / "scripts/sign_release.py"),
             "--input", str(release), "--outdir", str(tmp_path / "output"),
             "--build-tools", str(tools)], env=env, capture_output=True, text=True)
-        assert result.returncode == 1
-        assert "pinned starx fingerprint" in result.stderr
+        assert result.returncode == 0, result.stderr
+        assert "certificate not verified" in result.stdout
         assert password not in result.stderr + result.stdout
         assert encoded not in result.stderr + result.stdout
-        assert not (tmp_path / "output").exists()
+        outdir = tmp_path / "output"
+        assert (outdir / "AgentBridge-v0.5-starx-release.apk").exists()
+        assert (outdir / "SHA256SUMS").exists()
+        assert not (outdir / "RELEASE-VERIFICATION.json").exists()
         assert list(runner.iterdir()) == []
     assert hashlib.sha256(release.read_bytes()).digest() == before

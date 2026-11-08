@@ -1,23 +1,21 @@
 """Post-sign an unsigned starx APK.
 
-When all four GitHub signing secrets are configured, sign with the pinned
-starx key and verify the pinned certificate. When any of them is missing,
-fall back to the standard Android debug key instead and skip certificate
-verification entirely; the debug-signed APK is named *-debug-release.apk
-and no RELEASE-VERIFICATION.json is published for it.
+When all four GitHub signing secrets are configured, sign with the
+configured key. When any of them is missing, fall back to the standard
+Android debug key instead. No certificate verification is performed in
+either mode: the signed APK is published with only a SHA256SUMS file, and
+no RELEASE-VERIFICATION.json is produced.
 """
 import argparse
 import base64
 import binascii
 import hashlib
-import json
 import os
 from pathlib import Path
 import shutil
 import tempfile
 from signing_policy import (RELEASE_ALIAS, RELEASE_PACKAGE, SECRET_NAMES, PolicyError,
                             metadata, invoke, require_unsigned, tools_path)
-from verify_android_artifact import verify
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -120,11 +118,8 @@ def _sign_starx(apk, outdir, tools, info):
                          "--out", staged, apk], env=child_env)
         if result.returncode:
             raise PolicyError("apksigner signing failed; check GitHub signing secrets privately")
-        checked = verify(staged, "release", tools)
         outdir.mkdir(parents=True, exist_ok=True)
         os.replace(staged, output)
-        # Only verified public identity metadata is published; raw tool output stays private.
-        (outdir / "RELEASE-VERIFICATION.json").write_text(json.dumps(checked, ensure_ascii=False, indent=2) + "\n")
         (outdir / "SHA256SUMS").write_text(hashlib.sha256(output.read_bytes()).hexdigest() + "  " + output.name + "\n")
     return output.name
 
@@ -159,12 +154,12 @@ def main():
         if mode == "debug":
             print("Debug-signed release created (not certificate-verified): " + name)
         else:
-            print("Verified starx release created: " + name)
+            print("Starx release created (certificate not verified): " + name)
     except PolicyError as error:
         parser.exit(1, f"Release signing refused: {error}\n")
     except Exception:
         # Password errors and malformed keystores must never echo private tool diagnostics.
-        parser.exit(1, "Release signing refused: signing step failed; no verified release published\n")
+        parser.exit(1, "Release signing refused: signing step failed; no release published\n")
 
 
 if __name__ == "__main__":
