@@ -31,9 +31,9 @@ jobs:
         working-directory: android
       - name: Verify unsigned release identity
         run: python scripts/verify_android_artifact.py --kind unsigned-release --apk android/app/build/outputs/apk/release/app-release-unsigned.apk
-      # Signs with the pinned starx key and verifies its certificate when all
-      # four secrets are configured; otherwise falls back to the standard
-      # Android debug key with no certificate verification.
+      # Signs with the configured key when all four secrets are set;
+      # otherwise falls back to the standard Android debug key.
+      # No certificate verification is performed in either mode.
       - name: Sign release (starx if configured, else debug)
         id: sign
         env:
