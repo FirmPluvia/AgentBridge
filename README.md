@@ -13,7 +13,7 @@ Android 被控端通过 **Root 或 Shizuku** 执行真实截图、屏幕点击�
 ## 0.5 更新
 
 - 设置按钮改为“连接帮助”；首页连接类型改为“局域网·Tailscale”。版本名保持0.5，版本码14。
-- debug保持dev.agentbridge及默认调试签名；release改为starx.dev.agentbridge，独立安装，严格核验starx证书。辅助输入法组件名兼容两种包名。
+- debug保持dev.agentbridge及默认调试签名；release改为starx.dev.agentbridge，独立安装，不再核验证书指纹。辅助输入法组件名兼容两种包名。
 
 - Miuix首页及各页统一采用自身的标题层级、分组卡片、连续圆角和原生控件；移除旧Material首页混用。
 - Material 3使用原生字体角色、表面色阶、胶囊按钮、勾选分段按钮及导航指示器，统一各页面的间距和对齐。
@@ -177,6 +177,6 @@ pip install -c requirements.lock '.[test]'
 pytest -q
 ```
 
-源码：`android/`、`python/agentbridge/`、`.github/workflows/`、`docs/`；旧公网服务放在 `relay/`，当前不启用。push / PR / 手动运行会构建debug APK；tag release签名设置见 [docs/BUILD.md](docs/BUILD.md)。release仅手动或tag触发，先构建unsigned包，再从指定Secrets取starx密钥签名并核验固定指纹；缺少材料或证书不匹配即失败，不发布替代签名包。详见[签名约定](docs/SIGNING.md)。
+源码：`android/`、`python/agentbridge/`、`.github/workflows/`、`docs/`；旧公网服务放在 `relay/`，当前不启用。push / PR / 手动运行会构建debug APK；tag release签名设置见 [docs/BUILD.md](docs/BUILD.md)。release仅手动或tag触发，先构建unsigned包，再从指定Secrets取starx密钥签名，不核验证书指纹；缺少任一Secret时改用调试密钥签名，产物标明debug。详见[签名约定](docs/SIGNING.md)。
 
 当前环境没有KSU/ReKSU真机或实际Tailscale网络。编译、单元测试及静态检查不等同于你的手机实机通过；请依据新页面显示的授权/服务/自检结果验收。

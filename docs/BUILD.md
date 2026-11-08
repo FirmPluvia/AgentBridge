@@ -15,9 +15,9 @@ pytest -q
 
 上传完整源码、Gradle Wrapper JAR及脚本到GitHub仓库；保留gradlew与脚本可执行位。不要上传local.properties、.env、构建缓存及签名材料。`.github/workflows/build.yml`在push、PR及手动触发时运行Python测试、Android单元测试、lint、debug APK构建与签名身份校验，Artifacts中下载APK、SHA256SUMS及报告。
 
-`.github/workflows/release.yml` **只在手动或tag触发**，不在普通push或PR执行。先构建unsigned release，再由独立apksigner步骤使用starx签名并核验固定SHA-256。包名为starx.dev.agentbridge；debug仍为dev.agentbridge，且不配置任何signingConfig、不读取签名Secrets。
+`.github/workflows/release.yml` **只在手动或tag触发**，不在普通push或PR执行。先构建unsigned release，再由独立apksigner步骤使用starx签名，不核验证书指纹。包名为starx.dev.agentbridge；debug仍为dev.agentbridge，且不配置任何signingConfig、不读取签名Secrets。
 
-需要的Secrets仅为 **KEYSTORE_BASE64、KEYSTORE_PASSWORD、KEY_ALIAS、KEY_PASSWORD**。KEY_ALIAS必须为starx。配置、证书指纹、输出、临时密钥清理和安装迁移见[签名约定](SIGNING.md)。缺少材料或指纹不符时任务失败，没有debug签名或unsigned正式产物回退。
+需要的Secrets仅为 **KEYSTORE_BASE64、KEYSTORE_PASSWORD、KEY_ALIAS、KEY_PASSWORD**。KEY_ALIAS必须为starx。配置、证书指纹、输出、临时密钥清理和安装迁移见[签名约定](SIGNING.md)。缺少任一Secret时改用调试密钥签名，产物标明debug；别名不符、口令错误或签名工具失败时任务失败。
 
 可独立检查unsigned构建（不是可安装正式包）：
 
