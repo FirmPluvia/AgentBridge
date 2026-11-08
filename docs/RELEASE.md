@@ -1,11 +1,10 @@
-AgentBridge 0.5 · 连接文案与starx发布约定
+# AgentBridge 0.5
 
-- 设置页第二个按钮简化为“连接帮助”，首页连接类型改为“局域网·Tailscale”。
-- 版本名保持0.5；版本码14。保留Miuix/Material 3双主题、精简二维码和Agent提示词。
-- debug：dev.agentbridge，Android默认调试签名，无自定义signingConfig、不读取签名Secrets。
-- release：starx.dev.agentbridge，Gradle先构建unsigned，再由apksigner使用starx别名签名，不核验证书指纹。仅手动/tag触发；缺少任一签名密钥时改用调试密钥签名（产物为debug包），不混用两种签名。
-- 辅助输入法组件名适配正式包的新applicationId。两种包独立安装，授权和连接资料需分别配置。
+- **真机操控**：Root / Shizuku 执行真实截图、点击、滑动、按键、中文输入、UI hierarchy 查询；可选 shell（默认关闭）。
+- **直连，不走公网**：Tailscale / 局域网 HTTPS 直连，无公网中转；HTTPS 默认开启，证书须与访问 IP / DNS 匹配。
+- **三种接入**：HTTPS API、Python SDK / CLI、本地 stdio MCP；连接二维码扫码导入配置。
+- **一键自检**：逐项检查配置、证书、后端 UID、截图、输入与鉴权，只报告结果。
+- **双主题**：Miuix / Material 3，深浅色跟随系统。
+- **两个包**：debug（`dev.agentbridge`，调试签名）与 release（`starx.dev.agentbridge`，starx 密钥签名），独立安装。release 不再核验证书指纹；缺少签名密钥时改用调试密钥签名，产物标明 debug。
 
-详见SIGNING.md。生产密钥仅在GitHub Secrets中配置；仓库、源码包和日志不包含密钥或口令。GitHub Release附件不再经过固定指纹核验；本地交付下载页仅提供可安装debug包，不宣称已经生成starx正式包。
-
-本地Android构建、两种变体单元测试和lint通过；没有Android真机或模拟器，仍需实际验证Root/Shizuku、输入法及网络连接。签名拒绝路径采用临时测试证书验证，不能当作生产starx密钥验证通过。
+详见 [README](../README.md) 与 [签名约定](SIGNING.md)。
