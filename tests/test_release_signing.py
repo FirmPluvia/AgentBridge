@@ -23,8 +23,10 @@ def clear_signing_env(monkeypatch):
         monkeypatch.delenv(name, raising=False)
 
 
-def test_missing_secrets_never_creates_output(tmp_path):
-    with pytest.raises(policy.PolicyError, match="Missing required"):
+def test_missing_secrets_without_valid_apk_creates_nothing(tmp_path):
+    # Missing secrets now falls back to the debug key instead of refusing,
+    # so an unreadable input must still fail before any output is created.
+    with pytest.raises(policy.PolicyError, match="could not run"):
         sign_release.sign(tmp_path / "absent.apk", tmp_path / "output", tmp_path)
     assert not (tmp_path / "output").exists()
 
@@ -76,6 +78,20 @@ def test_debug_input_cannot_enter_release_signer(android_builds, monkeypatch, tm
     with pytest.raises(policy.PolicyError, match="starx application ID"):
         sign_release.sign(debug, tmp_path / "output", tools)
     assert not (tmp_path / "output").exists()
+
+
+def test_missing_secrets_falls_back_to_debug_key_without_verification(android_builds, tmp_path):
+    tools, _, release = android_builds
+    before = hashlib.sha256(release.read_bytes()).digest()
+    outdir = tmp_path / "output"
+    name = sign_release.sign(release, outdir, tools)
+    assert name == "AgentBridge-v0.5-debug-release.apk"
+    assert (outdir / name).exists()
+    assert (outdir / "SHA256SUMS").exists()
+    # No certificate verification is performed for the debug fallback,
+    # so no verification report is published for it.
+    assert not (outdir / "RELEASE-VERIFICATION.json").exists()
+    assert hashlib.sha256(release.read_bytes()).digest() == before
 
 
 def test_bad_base64_is_private_and_rejected(android_builds, monkeypatch, tmp_path):
