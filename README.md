@@ -15,16 +15,6 @@
 - **双主题**：Miuix / Material 3 一键切换，立即生效，深浅色跟随系统。
 - **安全**：所有控制请求需应用令牌；shell 默认关闭；中文输入需用户启用辅助输入法；坐标取自最近 30 秒内截图的实际像素；停止不能撤销已经发生的点击。
 
-## 安装
-
-下载页： https://agentbridge-download-20261101-b7d2.actual-2-trendy.chatgpt.site （使用拥有该站点的 ChatGPT 账户登录）。选择 0.5 APK 压缩包，解压安装。minSdk 26 / Android 8.0。
-
-两个包独立安装，数据不互通：
-
-- debug：`dev.agentbridge`，Android 默认调试签名。
-- release：`starx.dev.agentbridge`，starx 密钥签名（不再核验证书指纹；缺少签名密钥时改用调试密钥签名，产物标明 debug）。
-
-原来选择 ADB 的配置升级后变为“未选择”，需要明确选择 Root 或 Shizuku，不会静默切换到更高权限。原来保存的公网连接模式会切换到直连。
 
 ## 快速上手：Tailscale 直连
 
